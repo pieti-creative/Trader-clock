@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Trader World Clock — App</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<meta name="description" content="Trader World Clock — fast, elegant, mobile-first world clock with market open/closed info.">
+<style>
+  :root{
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --muted: #6b7280;
+    --text: #0f1724;
+    --accent: #2563eb;
+    --open-color: #2563eb;
+    --closed-color: #9ca3af;
+    --glass: rgba(255,255,255,0.85);
+    --soft-shadow: 0 8px 28px rgba(16,24,40,0.06);
+    --radius: 14px;
+    --header-h: 74px;
+  }
+
+  /* Page reset */
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  button{font-family:inherit}
+
+  /* App header (sticky) */
+  header.app-header{
+    position:fixed;left:12px;right:12px;top:12px;height:var(--header-h);
+    display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+    box-shadow:var(--soft-shadow);z-index:1000;border:1px solid rgba(16,24,40,0.04);
+    backdrop-filter: blur(6px) saturate(110%);
+  }
+  .brand{display:flex;flex-direction:column;line-height:1.05}
+  .brand .title{font-weight:700;font-size:1rem}
+  .brand .sub{font-size:0.78rem;color:var(--muted);margin-top:2px}
+
+  .search-wrap{flex:1;display:flex;justify-content:center;min-width:0}
+  .search{
+    width:100%;max-width:720px;display:flex;align-items:center;gap:10px;
+    background:var(--surface);border-radius:999px;padding:8px 12px;border:1px solid rgba(16,24,40,0.03);
+    box-shadow:0 4px 18px rgba(16,24,40,0.04);
+  }
+  .search input{border:0;background:transparent;outline:0;font-size:0.95rem;padding:8px 0;width:100%;color:var(--text)}
+  .hint{font-size:0.85rem;color:var(--muted)}
+
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{background:var(--surface);border-radius:10px;padding:8px 12px;border:1px solid rgba(16,24,40,0.04);box-shadow:0 2px 8px rgba(16,24,40,0.03);cursor:pointer;font-size:0.95rem}
+  .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border-radius:10px}
+
+  /* Settings panel */
+  .settings-panel{
+    position:fixed;top:calc(12px + var(--header-h) + 12px);right:12px;width:320px;max-width:calc(100% - 28px);
+    padding:14px;background:var(--surface);border-radius:12px;box-shadow:var(--soft-shadow);display:none;z-index:1002;border:1px solid rgba(16,24,40,0.04)
+  }
+  .settings-panel.show{display:block}
+  .settings-panel h3{margin:0;font-size:0.95rem;margin-bottom:12px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .label{font-size:0.85rem;color:var(--muted);min-width:110px}
+  .segmented{display:flex;gap:8px}
+  .segmented button{padding:8px 10px;border-radius:10px;border:1px solid rgba(16,24,40,0.05);background:transparent;cursor:pointer}
+  .segmented button.active{background:linear-gradient(180deg, rgba(37,99,235,0.08), rgba(37,99,235,0.06));border-color:rgba(37,99,235,0.12)}
+  .palette{display:flex;gap:8px}
+  .swatch{width:36px;height:36px;border-radius:8px;cursor:pointer;border:2px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(16,24,40,0.06)}
+
+  /* Main content area */
+  main.container{max-width:1200px;margin:0 auto;padding:calc(12px + var(--header-h) + 28px) 12px 80px}
+  .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .section-title h2{margin:0;font-size:1.05rem}
+  .filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .filter-bar button{padding:8px 12px;border-radius:10px;border:1px solid rgba(16,24,40,0.04);background:var(--surface);cursor:pointer}
+  .filter-bar button.active{background:linear-gradient(180deg, rgba(37,99,235,0.08), rgba(37,99,235,0.06));border-color:rgba(37,99,235,0.12)}
+
+  /* Desktop grid for larger screens */
+  .grid-desktop{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .card{
+    background:var(--surface);border-radius:12px;padding:16px;box-shadow:0 8px 28px rgba(16,24,40,0.06);border:1px solid rgba(16,24,40,0.03);
+    text-align:center;min-height:110px;display:flex;flex-direction:column;justify-content:center;transition:transform .12s ease;
+  }
+  .card:hover{transform:translateY(-6px)}
+  .label{font-weight:700;font-size:1rem;color:var(--text);margin-bottom:6px}
+  .sub{font-size:0.78rem;color:var(--muted);margin-bottom:8px}
+  .time{font-size:1.6rem;font-weight:700;letter-spacing:0.6px;color:var(--text);font-variant-numeric:tabular-nums}
+  .date{font-size:0.82rem;color:var(--muted);margin-top:8px}
+  .your-card{border:1px solid rgba(37,99,235,0.12);box-shadow:0 12px 40px rgba(37,99,235,0.06)}
+
+  /* Market status */
+  .market-open{border:2px solid var(--open-color)}
+  .market-closed{border:2px solid var(--closed-color);opacity:0.96}
+
+  /* Mobile: horizontal swipeable list with scroll-snap */
+  .snap-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .snap-row::-webkit-scrollbar{height:8px}
+  .snap-card{flex:0 0 76%;max-width:76%;scroll-snap-align:center;border-radius:14px;padding:18px;background:var(--surface);box-shadow:0 10px 30px rgba(16,24,40,0.07);border:1px solid rgba(16,24,40,0.03)}
+  .snap-card .label{font-size:1.05rem}
+  .snap-card .time{font-size:2.2rem}
+
+  /* utility */
+  .muted{color:var(--muted)} .small{font-size:0.82rem;color:var(--muted)}
+
+  /* Responsive breakpoints */
+  @media (min-width:900px){
+    /* Desktop: show grid, hide snap */
+    .snap-row{display:none}
+  }
+  @media (max-width:899px){
+    /* Mobile: hide desktop grid, use snap */
+    .grid-desktop{display:none}
+    .card{display:none}
+  }
+  @media (max-width:420px){
+    header.app-header{left:8px;right:8px;padding:10px}
+    .snap-card{flex:0 0 86%;max-width:86%}
+  }
+</style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header" role="banner">
+    <div class="brand" aria-hidden="false">
+      <div class="title">Trader World Clock</div>
+      <div class="sub">Markets • Timezones • Mobile dashboard</div>
+    </div>
+
+    <div class="search-wrap" role="search">
+      <div class="search" role="searchbox">
+        <input id="search" placeholder="Search city, market, or country (e.g., Tokyo, NYSE)" aria-label="Search cities">
+        <div class="hint">⌘/Ctrl + K</div>
+      </div>
+    </div>
+
+    <div class="controls" role="toolbar">
+      <button id="focusYour" class="btn" title="Scroll to your timezone">Your timezone</button>
+      <button id="settingsBtn" class="icon-btn" title="Settings" aria-controls="settingsPanel" aria-expanded="false">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Settings -->
+  <div id="settingsPanel" class="settings-panel" role="region" aria-label="Settings">
+    <h3>Settings</h3>
+    <div class="row">
+      <div class="label">Hour format</div>
+      <div class="segmented" role="group" aria-label="Hour format">
+        <button id="fmt24" class="active">24h</button>
+        <button id="fmt12">12h</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">Accent</div>
+      <div class="palette">
+        <div class="swatch" style="background:var(--accent)" data-accent="#2563eb" title="Blue"></div>
+        <div class="swatch" style="background:#0ea5a4" data-accent="#0ea5a4" title="Teal"></div>
+        <div class="swatch" style="background:#f97316" data-accent="#f97316" title="Orange"></div>
+        <div class="swatch" style="background:#6b7280" data-accent="#6b7280" title="Gray"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="label">Show</div>
+      <div style="display:flex;gap:8px">
+        <label class="small"><input id="showDate" type="checkbox" checked> Date</label>
+        <label class="small"><input id="showIANA" type="checkbox" checked> IANA</label>
+      </div>
+    </div>
+
+    <div style="margin-top:8px;font-size:0.82rem;color:var(--muted)">Settings saved to local browser storage.</div>
+  </div>
+
+  <!-- Main content -->
+  <main class="container" role="main">
+    <!-- Major markets snap row for mobile (swipeable) -->
+    <section aria-label="Major markets (swipeable)" style="margin-bottom:18px">
+      <div class="section-title">
+        <h2>Major Markets</h2>
+        <div class="small muted">Swipe → on mobile • Tap filter to view open/closed</div>
+      </div>
+
+      <div id="majorSnap" class="snap-row" aria-live="polite">
+        <!-- snap cards injected -->
+      </div>
+    </section>
+
+    <!-- Filters and actions -->
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <div class="filter-bar" role="tablist" aria-label="Market filters">
+        <button id="filterAll" class="active">All Cities</button>
+        <button id="filterOpen">Open Markets</button>
+        <button id="filterClosed">Closed Markets</button>
+        <button id="toggleMajor" class="btn">Show major only</button>
+      </div>
+      <div style="margin-left:auto" class="small muted">Tap a card to center on it</div>
+    </div>
+
+    <!-- Full grid for desktop -->
+    <section id="allGrid" class="grid-desktop" aria-label="All cities grid">
+      <!-- city cards injected here -->
+    </section>
+  </main>
+
+<script>
+/* ---------- Data: cities with optional market metadata ---------- */
+/* For major markets we'll set market hours (local times). Hours are in "HH:MM" 24-hour */
+const data = {
+  /* Tech/US markets */
+  "New York (NYSE/NASDAQ)": { tz: "America/New_York", market: "NYSE", open: "09:30", close: "16:00", tags: ["NYSE","NASDAQ","US"] },
+  "London (LSE)": { tz: "Europe/London", market: "LSE", open: "08:00", close: "16:30", tags: ["LSE","UK"] },
+  "Tokyo (TSE)": { tz: "Asia/Tokyo", market: "TSE", open: "09:00", close: "15:00", tags: ["TSE","JP"] },
+  "Hong Kong (HKEX)": { tz: "Asia/Hong_Kong", market: "HKEX", open: "09:30", close: "16:00", tags: ["HKEX","HK"] },
+  "Sydney (ASX)": { tz: "Australia/Sydney", market: "ASX", open: "10:00", close: "16:00", tags: ["ASX","AU"] },
+  "Shanghai (SSE)": { tz: "Asia/Shanghai", market: "SSE", open: "09:30", close: "15:00", tags: ["SSE","CN"] },
+  "Euronext (Paris)": { tz: "Europe/Paris", market: "Euronext", open: "09:00", close: "17:30", tags: ["Euronext","FR"] },
+  "Toronto (TSX)": { tz: "America/Toronto", market: "TSX", open: "09:30", close: "16:00", tags: ["TSX","CA"] },
+
+  /* many more cities (100+) — a mix of market and general */
+  "Los Angeles": { tz: "America/Los_Angeles" },
+  "Chicago": { tz: "America/Chicago" },
+  "Washington DC": { tz: "America/New_York" },
+  "San Francisco": { tz: "America/Los_Angeles" },
+  "Singapore": { tz: "Asia/Singapore" },
+  "Seoul": { tz: "Asia/Seoul" },
+  "Mumbai": { tz: "Asia/Kolkata" },
+  "Bangalore": { tz: "Asia/Kolkata" },
+  "Bangkok": { tz: "Asia/Bangkok" },
+  "Manila": { tz: "Asia/Manila" },
+  "Jakarta": { tz: "Asia/Jakarta" },
+  "Kuala Lumpur": { tz: "Asia/Kuala_Lumpur" },
+  "Dubai": { tz: "Asia/Dubai" },
+  "Abu Dhabi": { tz: "Asia/Dubai" },
+  "Riyadh": { tz: "Asia/Riyadh" },
+  "Tel Aviv": { tz: "Asia/Jerusalem" },
+  "Cairo": { tz: "Africa/Cairo" },
+  "Johannesburg": { tz: "Africa/Johannesburg" },
+  "Nairobi": { tz: "Africa/Nairobi" },
+  "Istanbul": { tz: "Europe/Istanbul" },
+  "Moscow": { tz: "Europe/Moscow" },
+  "Berlin": { tz: "Europe/Berlin" },
+  "Madrid": { tz: "Europe/Madrid" },
+  "Rome": { tz: "Europe/Rome" },
+  "Zurich": { tz: "Europe/Zurich" },
+  "Amsterdam": { tz: "Europe/Amsterdam" },
+  "Brussels": { tz: "Europe/Brussels" },
+  "Stockholm": { tz: "Europe/Stockholm" },
+  "Oslo": { tz: "Europe/Oslo" },
+  "Helsinki": { tz: "Europe/Helsinki" },
+  "Copenhagen": { tz: "Europe/Copenhagen" },
+  "Lisbon": { tz: "Europe/Lisbon" },
+  "Reykjavik": { tz: "Atlantic/Reykjavik" },
+  "Mexico City": { tz: "America/Mexico_City" },
+  "Sao Paulo": { tz: "America/Sao_Paulo" },
+  "Buenos Aires": { tz: "America/Argentina/Buenos_Aires" },
+  "Lima": { tz: "America/Lima" },
+  "Bogota": { tz: "America/Bogota" },
+  "Santiago": { tz: "America/Santiago" },
+  "Montevideo": { tz: "America/Montevideo" },
+  "Honolulu": { tz: "Pacific/Honolulu" },
+  "Anchorage": { tz: "America/Anchorage" },
+  "Auckland": { tz: "Pacific/Auckland" },
+  "Melbourne": { tz: "Australia/Melbourne" },
+  "Brisbane": { tz: "Australia/Brisbane" },
+  "Perth": { tz: "Australia/Perth" },
+  "Hanoi": { tz: "Asia/Bangkok" },
+  "Ho Chi Minh City": { tz: "Asia/Ho_Chi_Minh" },
+  "Taipei": { tz: "Asia/Taipei" },
+  "Hong Kong 2": { tz: "Asia/Hong_Kong" },
+  "Beijing": { tz: "Asia/Shanghai" },
+  "Shanghai 2": { tz: "Asia/Shanghai" },
+  "Karachi": { tz: "Asia/Karachi" },
+  "Dhaka": { tz: "Asia/Dhaka" },
+  "Colombo": { tz: "Asia/Colombo" },
+  "Addis Ababa": { tz: "Africa/Addis_Ababa" },
+  "Casablanca": { tz: "Africa/Casablanca" },
+  "Algiers": { tz: "Africa/Algiers" },
+  "Tunis": { tz: "Africa/Tunis" },
+  "Vilnius": { tz: "Europe/Vilnius" },
+  "Riga": { tz: "Europe/Riga" },
+  "Tallinn": { tz: "Europe/Tallinn" },
+  "Luxembourg": { tz: "Europe/Luxembourg" },
+  "Valletta": { tz: "Europe/Malta" },
+  "Prague": { tz: "Europe/Prague" },
+  "Bratislava": { tz: "Europe/Bratislava" },
+  "Budapest": { tz: "Europe/Budapest" },
+  "Bucharest": { tz: "Europe/Bucharest" },
+  "Belgrade": { tz: "Europe/Belgrade" },
+  "Zagreb": { tz: "Europe/Zagreb" },
+  "Ljubljana": { tz: "Europe/Ljubljana" },
+  "Sarajevo": { tz: "Europe/Sarajevo" },
+  "Skopje": { tz: "Europe/Skopje" },
+  "Podgorica": { tz: "Europe/Podgorica" },
+  "Tirana": { tz: "Europe/Tirane" },
+  "Kiev": { tz: "Europe/Kyiv" },
+  "Tbilisi": { tz: "Asia/Tbilisi" },
+  "Baku": { tz: "Asia/Baku" },
+  "Yerevan": { tz: "Asia/Yerevan" },
+  "Bahrain": { tz: "Asia/Bahrain" },
+  "Doha": { tz: "Asia/Qatar" },
+  "Muscat": { tz: "Asia/Muscat" },
+  "Manama": { tz: "Asia/Bahrain" }
+};
+
+/* ---------- Utilities & DOM ---------- */
+const majorMarketKeys = [
+  "New York (NYSE/NASDAQ)","London (LSE)","Tokyo (TSE)","Hong Kong (HKEX)",
+  "Sydney (ASX)","Shanghai (SSE)","Euronext (Paris)","Toronto (TSX)"
+];
+
+const gridDesktop = document.getElementById('allGrid');
+const majorSnap = document.getElementById('majorSnap');
+const searchInput = document.getElementById('search');
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsPanel = document.getElementById('settingsPanel');
+const fmt24Btn = document.getElementById('fmt24');
+const fmt12Btn = document.getElementById('fmt12');
+const swatches = document.querySelectorAll('.swatch');
+const showDateChk = document.getElementById('showDate');
+const showIANAChk = document.getElementById('showIANA');
+const filterAllBtn = document.getElementById('filterAll');
+const filterOpenBtn = document.getElementById('filterOpen');
+const filterClosedBtn = document.getElementById('filterClosed');
+const toggleMajorBtn = document.getElementById('toggleMajor');
+const focusYourBtn = document.getElementById('focusYour');
+
+let hour24 = true;
+let showDate = true;
+let showIANA = true;
+let currentFilter = 'all';
+let showMajorOnly = true;
+
+/* detect user timezone and create a "Your timezone" card */
+const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+data["Your timezone"] = { tz: userTZ };
+
+/* helper: safe id */
+function idFor(name){ return 'c_' + name.replace(/[^\w]/g,'_'); }
+
+/* format time for tz with options */
+function formatForTZ(tz){
+  try{
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: !hour24, timeZone: tz });
+    const dateStr = now.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', timeZone: tz });
+    return {timeStr, dateStr};
+  }catch(e){
+    return {timeStr: '--:--:--', dateStr: ''};
+  }
+}
+
+/* check if market is open given local open/close strings in "HH:MM" */
+function isMarketOpen(openHHMM, closeHHMM, tz){
+  if(!openHHMM || !closeHHMM) return false;
+  const now = new Date();
+  // get current time components in tz by formatting to ISO-like then parse hours:minutes
+  const parts = new Intl.DateTimeFormat('en-GB', { hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit', timeZone: tz }).formatToParts(now);
+  const hour = parseInt(parts.find(p=>p.type==='hour').value,10);
+  const minute = parseInt(parts.find(p=>p.type==='minute').value,10);
+  const cur = hour*60 + minute;
+
+  const [oh, om] = openHHMM.split(':').map(Number);
+  const [ch, cm] = closeHHMM.split(':').map(Number);
+  const openMin = oh*60 + om;
+  const closeMin = ch*60 + cm;
+
+  // handle markets that close past midnight (rare); assume openMin < closeMin normally
+  return cur >= openMin && cur < closeMin;
+}
+
+/* Create DOM cards */
+function renderAll(){
+  // major snap
+  majorSnap.innerHTML = '';
+  majorMarketKeys.forEach(k=>{
+    const info = data[k];
+    if(!info) return;
+    const id = idFor(k);
+    const snap = document.createElement('div');
+    snap.className = 'snap-card';
+    snap.dataset.city = k.toLowerCase();
+    snap.tabIndex = 0;
+    snap.innerHTML = `
+      <div class="label">${k}</div>
+      <div class="sub">${info.market ? info.market : (info.tz||'')}</div>
+      <div class="time" id="${id}_time">--:--:--</div>
+      <div class="date small muted" id="${id}_date"></div>
+    `;
+    snap.addEventListener('click', ()=> snap.scrollIntoView({behavior:'smooth',block:'center'}));
+    majorSnap.appendChild(snap);
+  });
+
+  // desktop grid (all)
+  gridDesktop.innerHTML = '';
+  Object.entries(data).forEach(([name,info])=>{
+    const id = idFor(name);
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.dataset.city = name.toLowerCase();
+    card.dataset.isMarket = info.market ? '1' : '0';
+    card.innerHTML = `
+      <div class="label">${name}${name==="Your timezone" ? ' — (Your timezone)' : ''}</div>
+      <div class="sub" id="${id}_sub">${info.market ? info.market : (info.tz || '')}</div>
+      <div class="time" id="${id}_time">--:--:--</div>
+      <div class="date" id="${id}_date" style="display:${showDate ? 'block' : 'none'}"></div>
+      <div class="date small muted" id="${id}_iana" style="display:${showIANA && info.tz ? 'block' : 'none'}">${info.tz || ''}</div>
+    `;
+    card.addEventListener('click', ()=> card.scrollIntoView({behavior:'smooth',block:'center'}));
+    gridDesktop.appendChild(card);
+  });
+}
+
+/* Update times & market status styling every second */
+function updateAll(){
+  Object.entries(data).forEach(([name,info])=>{
+    const id = idFor(name);
+    // time & date
+    const timeEl = document.getElementById(id + '_time');
+    const dateEl = document.getElementById(id + '_date');
+    const tzEl = document.getElementById(id + '_iana');
+    if(timeEl && info.tz){
+      const f = formatForTZ(info.tz);
+      timeEl.textContent = f.timeStr;
+      if(dateEl) dateEl.textContent = f.dateStr;
+      if(tzEl) tzEl.textContent = info.tz;
+    } else if(timeEl){
+      timeEl.textContent = '--:--:--';
+      if(dateEl) dateEl.textContent = '';
+    }
+
+    // market status: on both major snap cards and desktop grid, update class
+    if(info.market && info.open && info.close && info.tz){
+      const open = isMarketOpen(info.open, info.close, info.tz);
+      // find desktop card
+      const card = document.querySelector(`#${id}_time`) ? document.getElementById(id + '_time').closest('.card') : null;
+      if(card){
+        card.classList.toggle('market-open', open);
+        card.classList.toggle('market-closed', !open);
+      }
+      // find snap card
+      const snap = Array.from(document.querySelectorAll('.snap-card')).find(s=> s.dataset.city === name.toLowerCase());
+      if(snap){
+        snap.classList.toggle('market-open', open);
+        snap.classList.toggle('market-closed', !open);
+      }
+    }
+  });
+}
+
+/* Filter functions */
+function applyFilter(){
+  const q = searchInput.value.trim().toLowerCase();
+  document.querySelectorAll('.card').forEach(card=>{
+    const city = card.dataset.city || '';
+    const isMarket = card.dataset.isMarket === '1';
+    let show = city.includes(q);
+    if(currentFilter === 'open' || currentFilter === 'closed'){
+      // evaluate market open/closed from class
+      const isOpen = card.classList.contains('market-open');
+      if(currentFilter === 'open') show = show && isOpen;
+      if(currentFilter === 'closed') show = show && !isOpen;
+    }
+    if(showMajorOnly){
+      // only show if the city exists in majorMarketKeys OR is Your timezone
+      const name = card.querySelector('.label')?.textContent || '';
+      const allowed = majorMarketKeys.includes(name) || name === 'Your timezone';
+      show = show && allowed;
+    }
+    card.style.display = show ? '' : 'none';
+  });
+
+  // also filter snap cards
+  document.querySelectorAll('.snap-card').forEach(s=>{
+    const city = s.dataset.city || '';
+    s.style.display = city.includes(q) ? '' : 'none';
+  });
+}
+
+/* UI wiring */
+searchInput.addEventListener('input', ()=> applyFilter());
+settingsBtn.addEventListener('click', ()=>{
+  const shown = settingsPanel.classList.toggle('show');
+  settingsBtn.setAttribute('aria-expanded', shown ? 'true' : 'false');
+});
+fmt24Btn.addEventListener('click', ()=> { hour24=true; fmt24Btn.classList.add('active'); fmt12Btn.classList.remove('active'); localSave(); updateAll(); });
+fmt12Btn.addEventListener('click', ()=> { hour24=false; fmt12Btn.classList.add('active'); fmt24Btn.classList.remove('active'); localSave(); updateAll(); });
+swatches.forEach(s => s.addEventListener('click', ()=> {
+  const c = s.dataset.accent;
+  document.documentElement.style.setProperty('--accent', c);
+  document.documentElement.style.setProperty('--open-color', c);
+  localSave();
+}));
+showDateChk.addEventListener('change', ()=> {
+  showDate = showDateChk.checked;
+  document.querySelectorAll("[id$='_date']").forEach(d => d.style.display = showDate ? 'block' : 'none');
+  localSave();
+});
+showIANAChk.addEventListener('change', ()=>{
+  showIANA = showIANAChk.checked;
+  document.querySelectorAll("[id$='_iana']").forEach(d => d.style.display = showIANA ? 'block' : 'none');
+  localSave();
+});
+
+filterAllBtn.addEventListener('click', ()=> { currentFilter='all'; setActiveFilter(); applyFilter(); });
+filterOpenBtn.addEventListener('click', ()=> { currentFilter='open'; setActiveFilter(); applyFilter(); });
+filterClosedBtn.addEventListener('click', ()=> { currentFilter='closed'; setActiveFilter(); applyFilter(); });
+toggleMajorBtn.addEventListener('click', ()=> { showMajorOnly = !showMajorOnly; toggleMajorBtn.textContent = showMajorOnly ? 'Show major only' : 'Show all cities'; applyFilter(); localSave(); });
+
+focusYourBtn.addEventListener('click', ()=> {
+  const el = Array.from(document.querySelectorAll('.card')).find(c => c.querySelector('.label') && c.querySelector('.label').textContent.includes('Your timezone'));
+  if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+/* keyboard shortcut to focus search */
+document.addEventListener('keydown', (e)=>{
+  const mod = navigator.platform.indexOf('Mac') >= 0 ? e.metaKey : e.ctrlKey;
+  if((mod && e.key.toLowerCase() === 'k') || e.key === '/') { e.preventDefault(); searchInput.focus(); searchInput.select(); }
+});
+
+/* set active filter button visuals */
+function setActiveFilter(){
+  [filterAllBtn, filterOpenBtn, filterClosedBtn].forEach(b => b.classList.remove('active'));
+  if(currentFilter === 'all') filterAllBtn.classList.add('active');
+  if(currentFilter === 'open') filterOpenBtn.classList.add('active');
+  if(currentFilter === 'closed') filterClosedBtn.classList.add('active');
+}
+
+/* local storage for preferences */
+function localSave(){
+  try{
+    const s = {hour24,accent:getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),showDate,showIANA,showMajorOnly};
+    localStorage.setItem('trader_clock_prefs', JSON.stringify(s));
+  }catch(e){}
+}
+function localLoad(){
+  try{
+    const p = JSON.parse(localStorage.getItem('trader_clock_prefs') || 'null');
+    if(p){
+      hour24 = p.hour24 !== false;
+      if(p.accent) { document.documentElement.style.setProperty('--accent', p.accent); document.documentElement.style.setProperty('--open-color', p.accent); }
+      if(p.showDate === false) { showDate=false; showDateChk.checked=false; }
+      if(p.showIANA === false) { showIANA=false; showIANAChk.checked=false; }
+      if(p.showMajorOnly === false) { showMajorOnly=false; toggleMajorBtn.textContent='Show all cities'; }
+      if(hour24) { fmt24Btn.classList.add('active'); fmt12Btn.classList.remove('active'); } else { fmt12Btn.classList.add('active'); fmt24Btn.classList.remove('active'); }
+    }
+  }catch(e){}
+}
+
+/* Initial render and loop */
+localLoad();
+renderAll();
+updateAll();
+setInterval(updateAll, 1000);
+setInterval(applyFilter, 500); // reapply filter semi-regularly to reflect status changes
+
+/* initial filter state */
+setActiveFilter();
+applyFilter();
+
+/* ensure tapping cards scrolls them to center for snap row on mobile */
+majorSnap.addEventListener('click', (e)=>{
+  const s = e.target.closest('.snap-card');
+  if(s) s.scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+/* make major snap accessible by keyboard */
+majorSnap.addEventListener('keydown', (e)=> {
+  if(e.key === 'ArrowRight'){ (document.activeElement.nextElementSibling || document.activeElement).focus(); }
+  if(e.key === 'ArrowLeft'){ (document.activeElement.previousElementSibling || document.activeElement).focus(); }
+});
+</script>
+
+</body>
+</html>
