@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Trader World Clock — App</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Trader World Clock — Responsive (100 cities)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-<meta name="description" content="Trader World Clock — fast, elegant, mobile-first world clock with market open/closed info.">
+<meta name="description" content="Trader World Clock — mobile-first world clock with market open/closed info.">
 <style>
+  /* ---------- Theme variables (default light) ---------- */
   :root{
     --bg: #f6f7f9;
     --surface: #ffffff;
@@ -21,13 +22,37 @@
     --header-h: 74px;
   }
 
-  /* Page reset */
+  /* Dark Luxury theme */
+  body.theme-dark {
+    --bg: #0b0d0f;
+    --surface: #0f1316;
+    --muted: #bdb6a6;
+    --text: #f5efe0;
+    --accent: #d4af37;
+    --open-color: #d4af37;
+    --closed-color: #6b6b6b;
+    --soft-shadow: 0 12px 36px rgba(0,0,0,0.6);
+  }
+
+  /* Gold variant (light wallpaper with gold accents) */
+  body.theme-gold {
+    --bg: linear-gradient(180deg,#fbfaf7,#f6f2ec);
+    --surface: linear-gradient(180deg,#fffdfa,#fff8e8);
+    --muted: #6b5d3d;
+    --text: #1b1b1b;
+    --accent: #b88629;
+    --open-color: #b88629;
+    --closed-color: #a0916b;
+    --soft-shadow: 0 8px 28px rgba(107,93,61,0.08);
+  }
+
+  /* ---------- Reset & base ---------- */
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
-  a{color:inherit}
   button{font-family:inherit}
+  a{color:inherit}
 
-  /* App header (sticky) */
+  /* ---------- Header (sticky) ---------- */
   header.app-header{
     position:fixed;left:12px;right:12px;top:12px;height:var(--header-h);
     display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;
@@ -35,6 +60,15 @@
     box-shadow:var(--soft-shadow);z-index:1000;border:1px solid rgba(16,24,40,0.04);
     backdrop-filter: blur(6px) saturate(110%);
   }
+  /* header style adapts to dark/gold via variables */
+  body.theme-dark header.app-header{
+    background: linear-gradient(180deg, rgba(20,20,20,0.95), rgba(18,18,18,0.85));
+    border-color: rgba(255,255,255,0.03);
+  }
+  body.theme-gold header.app-header{
+    background: linear-gradient(180deg, rgba(255,250,240,0.95), rgba(255,250,240,0.85));
+  }
+
   .brand{display:flex;flex-direction:column;line-height:1.05}
   .brand .title{font-weight:700;font-size:1rem}
   .brand .sub{font-size:0.78rem;color:var(--muted);margin-top:2px}
@@ -45,6 +79,7 @@
     background:var(--surface);border-radius:999px;padding:8px 12px;border:1px solid rgba(16,24,40,0.03);
     box-shadow:0 4px 18px rgba(16,24,40,0.04);
   }
+  body.theme-dark .search{border-color: rgba(255,255,255,0.03);box-shadow:none}
   .search input{border:0;background:transparent;outline:0;font-size:0.95rem;padding:8px 0;width:100%;color:var(--text)}
   .hint{font-size:0.85rem;color:var(--muted)}
 
@@ -52,11 +87,12 @@
   .btn{background:var(--surface);border-radius:10px;padding:8px 12px;border:1px solid rgba(16,24,40,0.04);box-shadow:0 2px 8px rgba(16,24,40,0.03);cursor:pointer;font-size:0.95rem}
   .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border-radius:10px}
 
-  /* Settings panel */
+  /* ---------- Settings panel ---------- */
   .settings-panel{
     position:fixed;top:calc(12px + var(--header-h) + 12px);right:12px;width:320px;max-width:calc(100% - 28px);
     padding:14px;background:var(--surface);border-radius:12px;box-shadow:var(--soft-shadow);display:none;z-index:1002;border:1px solid rgba(16,24,40,0.04)
   }
+  body.theme-dark .settings-panel{border-color: rgba(255,255,255,0.03)}
   .settings-panel.show{display:block}
   .settings-panel h3{margin:0;font-size:0.95rem;margin-bottom:12px}
   .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
@@ -67,7 +103,11 @@
   .palette{display:flex;gap:8px}
   .swatch{width:36px;height:36px;border-radius:8px;cursor:pointer;border:2px solid rgba(255,255,255,0.6);box-shadow:0 2px 8px rgba(16,24,40,0.06)}
 
-  /* Main content area */
+  /* theme selector row */
+  .theme-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  .theme-select{padding:8px;border-radius:10px;border:1px solid rgba(16,24,40,0.04);background:var(--surface);cursor:pointer}
+
+  /* ---------- Main & layout ---------- */
   main.container{max-width:1200px;margin:0 auto;padding:calc(12px + var(--header-h) + 28px) 12px 80px}
   .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
   .section-title h2{margin:0;font-size:1.05rem}
@@ -75,7 +115,7 @@
   .filter-bar button{padding:8px 12px;border-radius:10px;border:1px solid rgba(16,24,40,0.04);background:var(--surface);cursor:pointer}
   .filter-bar button.active{background:linear-gradient(180deg, rgba(37,99,235,0.08), rgba(37,99,235,0.06));border-color:rgba(37,99,235,0.12)}
 
-  /* Desktop grid for larger screens */
+  /* Desktop grid */
   .grid-desktop{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
   .card{
     background:var(--surface);border-radius:12px;padding:16px;box-shadow:0 8px 28px rgba(16,24,40,0.06);border:1px solid rgba(16,24,40,0.03);
@@ -88,27 +128,24 @@
   .date{font-size:0.82rem;color:var(--muted);margin-top:8px}
   .your-card{border:1px solid rgba(37,99,235,0.12);box-shadow:0 12px 40px rgba(37,99,235,0.06)}
 
-  /* Market status */
+  /* Market state */
   .market-open{border:2px solid var(--open-color)}
   .market-closed{border:2px solid var(--closed-color);opacity:0.96}
 
-  /* Mobile: horizontal swipeable list with scroll-snap */
+  /* Snap row for mobile */
   .snap-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
   .snap-row::-webkit-scrollbar{height:8px}
   .snap-card{flex:0 0 76%;max-width:76%;scroll-snap-align:center;border-radius:14px;padding:18px;background:var(--surface);box-shadow:0 10px 30px rgba(16,24,40,0.07);border:1px solid rgba(16,24,40,0.03)}
   .snap-card .label{font-size:1.05rem}
   .snap-card .time{font-size:2.2rem}
 
-  /* utility */
   .muted{color:var(--muted)} .small{font-size:0.82rem;color:var(--muted)}
 
-  /* Responsive breakpoints */
+  /* responsive */
   @media (min-width:900px){
-    /* Desktop: show grid, hide snap */
     .snap-row{display:none}
   }
   @media (max-width:899px){
-    /* Mobile: hide desktop grid, use snap */
     .grid-desktop{display:none}
     .card{display:none}
   }
@@ -121,7 +158,7 @@
 <body>
   <!-- Header -->
   <header class="app-header" role="banner">
-    <div class="brand" aria-hidden="false">
+    <div class="brand">
       <div class="title">Trader World Clock</div>
       <div class="sub">Markets • Timezones • Mobile dashboard</div>
     </div>
@@ -142,6 +179,16 @@
   <!-- Settings -->
   <div id="settingsPanel" class="settings-panel" role="region" aria-label="Settings">
     <h3>Settings</h3>
+
+    <div class="row">
+      <div class="label">Theme</div>
+      <select id="themeSelect" class="theme-select" aria-label="Choose theme">
+        <option value="light">Light</option>
+        <option value="dark">Dark Luxury</option>
+        <option value="gold">Gold Accent</option>
+      </select>
+    </div>
+
     <div class="row">
       <div class="label">Hour format</div>
       <div class="segmented" role="group" aria-label="Hour format">
@@ -168,45 +215,35 @@
       </div>
     </div>
 
-    <div style="margin-top:8px;font-size:0.82rem;color:var(--muted)">Settings saved to local browser storage.</div>
+    <div style="margin-top:8px;font-size:0.82rem;color:var(--muted)">Settings saved locally.</div>
   </div>
 
-  <!-- Main content -->
+  <!-- Main -->
   <main class="container" role="main">
-    <!-- Major markets snap row for mobile (swipeable) -->
-    <section aria-label="Major markets (swipeable)" style="margin-bottom:18px">
+    <section style="margin-bottom:18px">
       <div class="section-title">
         <h2>Major Markets</h2>
-        <div class="small muted">Swipe → on mobile • Tap filter to view open/closed</div>
+        <div class="small muted">Swipe → on mobile • Tap a card to center</div>
       </div>
-
-      <div id="majorSnap" class="snap-row" aria-live="polite">
-        <!-- snap cards injected -->
-      </div>
+      <div id="majorSnap" class="snap-row" aria-live="polite"></div>
     </section>
 
-    <!-- Filters and actions -->
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-      <div class="filter-bar" role="tablist" aria-label="Market filters">
+      <div class="filter-bar" role="tablist">
         <button id="filterAll" class="active">All Cities</button>
         <button id="filterOpen">Open Markets</button>
         <button id="filterClosed">Closed Markets</button>
         <button id="toggleMajor" class="btn">Show major only</button>
       </div>
-      <div style="margin-left:auto" class="small muted">Tap a card to center on it</div>
+      <div style="margin-left:auto" class="small muted">Tap a card to center</div>
     </div>
 
-    <!-- Full grid for desktop -->
-    <section id="allGrid" class="grid-desktop" aria-label="All cities grid">
-      <!-- city cards injected here -->
-    </section>
+    <section id="allGrid" class="grid-desktop" aria-label="All cities grid"></section>
   </main>
 
 <script>
-/* ---------- Data: cities with optional market metadata ---------- */
-/* For major markets we'll set market hours (local times). Hours are in "HH:MM" 24-hour */
+/* =================== Data: 100+ cities with optional markets =================== */
 const data = {
-  /* Tech/US markets */
   "New York (NYSE/NASDAQ)": { tz: "America/New_York", market: "NYSE", open: "09:30", close: "16:00", tags: ["NYSE","NASDAQ","US"] },
   "London (LSE)": { tz: "Europe/London", market: "LSE", open: "08:00", close: "16:30", tags: ["LSE","UK"] },
   "Tokyo (TSE)": { tz: "Asia/Tokyo", market: "TSE", open: "09:00", close: "15:00", tags: ["TSE","JP"] },
@@ -216,7 +253,7 @@ const data = {
   "Euronext (Paris)": { tz: "Europe/Paris", market: "Euronext", open: "09:00", close: "17:30", tags: ["Euronext","FR"] },
   "Toronto (TSX)": { tz: "America/Toronto", market: "TSX", open: "09:30", close: "16:00", tags: ["TSX","CA"] },
 
-  /* many more cities (100+) — a mix of market and general */
+  /* rest (major + general) */
   "Los Angeles": { tz: "America/Los_Angeles" },
   "Chicago": { tz: "America/Chicago" },
   "Washington DC": { tz: "America/New_York" },
@@ -266,9 +303,7 @@ const data = {
   "Hanoi": { tz: "Asia/Bangkok" },
   "Ho Chi Minh City": { tz: "Asia/Ho_Chi_Minh" },
   "Taipei": { tz: "Asia/Taipei" },
-  "Hong Kong 2": { tz: "Asia/Hong_Kong" },
   "Beijing": { tz: "Asia/Shanghai" },
-  "Shanghai 2": { tz: "Asia/Shanghai" },
   "Karachi": { tz: "Asia/Karachi" },
   "Dhaka": { tz: "Asia/Dhaka" },
   "Colombo": { tz: "Asia/Colombo" },
@@ -292,7 +327,7 @@ const data = {
   "Skopje": { tz: "Europe/Skopje" },
   "Podgorica": { tz: "Europe/Podgorica" },
   "Tirana": { tz: "Europe/Tirane" },
-  "Kiev": { tz: "Europe/Kyiv" },
+  "Kyiv": { tz: "Europe/Kyiv" },
   "Tbilisi": { tz: "Asia/Tbilisi" },
   "Baku": { tz: "Asia/Baku" },
   "Yerevan": { tz: "Asia/Yerevan" },
@@ -302,12 +337,13 @@ const data = {
   "Manama": { tz: "Asia/Bahrain" }
 };
 
-/* ---------- Utilities & DOM ---------- */
+/* ---------- Some major market keys (order for mobile snap) ---------- */
 const majorMarketKeys = [
   "New York (NYSE/NASDAQ)","London (LSE)","Tokyo (TSE)","Hong Kong (HKEX)",
   "Sydney (ASX)","Shanghai (SSE)","Euronext (Paris)","Toronto (TSX)"
 ];
 
+/* ---------- DOM references ---------- */
 const gridDesktop = document.getElementById('allGrid');
 const majorSnap = document.getElementById('majorSnap');
 const searchInput = document.getElementById('search');
@@ -323,6 +359,7 @@ const filterOpenBtn = document.getElementById('filterOpen');
 const filterClosedBtn = document.getElementById('filterClosed');
 const toggleMajorBtn = document.getElementById('toggleMajor');
 const focusYourBtn = document.getElementById('focusYour');
+const themeSelect = document.getElementById('themeSelect');
 
 let hour24 = true;
 let showDate = true;
@@ -330,47 +367,56 @@ let showIANA = true;
 let currentFilter = 'all';
 let showMajorOnly = true;
 
-/* detect user timezone and create a "Your timezone" card */
+/* ---------- Detect user timezone and insert as a card ---------- */
 const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 data["Your timezone"] = { tz: userTZ };
 
-/* helper: safe id */
+/* ---------- Helpers ---------- */
 function idFor(name){ return 'c_' + name.replace(/[^\w]/g,'_'); }
 
-/* format time for tz with options */
+/* Safely format time for a timezone (return fallback on error) */
 function formatForTZ(tz){
   try{
     const now = new Date();
-    const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: !hour24, timeZone: tz });
+    const opts = { hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: !hour24, timeZone: tz };
+    const timeStr = now.toLocaleTimeString(undefined, opts);
     const dateStr = now.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', timeZone: tz });
-    return {timeStr, dateStr};
+    return { timeStr, dateStr };
   }catch(e){
-    return {timeStr: '--:--:--', dateStr: ''};
+    // if a timezone fails, return placeholders
+    return { timeStr: '--:--:--', dateStr: '' };
   }
 }
 
-/* check if market is open given local open/close strings in "HH:MM" */
+/* determine if market is open for given HH:MM strings in that tz */
 function isMarketOpen(openHHMM, closeHHMM, tz){
   if(!openHHMM || !closeHHMM) return false;
-  const now = new Date();
-  // get current time components in tz by formatting to ISO-like then parse hours:minutes
-  const parts = new Intl.DateTimeFormat('en-GB', { hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit', timeZone: tz }).formatToParts(now);
-  const hour = parseInt(parts.find(p=>p.type==='hour').value,10);
-  const minute = parseInt(parts.find(p=>p.type==='minute').value,10);
-  const cur = hour*60 + minute;
+  try{
+    const now = new Date();
+    // Get local timezone hour/minute by formatting to parts
+    const parts = new Intl.DateTimeFormat('en-GB', { hour12:false, hour:'2-digit', minute:'2-digit', timeZone: tz }).formatToParts(now);
+    const hour = parseInt(parts.find(p=>p.type==='hour').value,10);
+    const minute = parseInt(parts.find(p=>p.type==='minute').value,10);
+    const cur = hour * 60 + minute;
 
-  const [oh, om] = openHHMM.split(':').map(Number);
-  const [ch, cm] = closeHHMM.split(':').map(Number);
-  const openMin = oh*60 + om;
-  const closeMin = ch*60 + cm;
+    let [oh, om] = openHHMM.split(':').map(Number);
+    let [ch, cm] = closeHHMM.split(':').map(Number);
+    const openMin = oh*60 + om;
+    const closeMin = ch*60 + cm;
 
-  // handle markets that close past midnight (rare); assume openMin < closeMin normally
-  return cur >= openMin && cur < closeMin;
+    // Normal day open-close (most markets)
+    if(openMin < closeMin) return cur >= openMin && cur < closeMin;
+
+    // If market crosses midnight (rare), consider that
+    return (cur >= openMin) || (cur < closeMin);
+  }catch(e){
+    return false;
+  }
 }
 
-/* Create DOM cards */
+/* ---------- Rendering ---------- */
 function renderAll(){
-  // major snap
+  // major snap (mobile)
   majorSnap.innerHTML = '';
   majorMarketKeys.forEach(k=>{
     const info = data[k];
@@ -390,17 +436,18 @@ function renderAll(){
     majorSnap.appendChild(snap);
   });
 
-  // desktop grid (all)
+  // all grid (desktop)
   gridDesktop.innerHTML = '';
   Object.entries(data).forEach(([name,info])=>{
     const id = idFor(name);
     const card = document.createElement('article');
     card.className = 'card';
+    if(name === 'Your timezone') card.classList.add('your-card');
     card.dataset.city = name.toLowerCase();
     card.dataset.isMarket = info.market ? '1' : '0';
     card.innerHTML = `
-      <div class="label">${name}${name==="Your timezone" ? ' — (Your timezone)' : ''}</div>
-      <div class="sub" id="${id}_sub">${info.market ? info.market : (info.tz || '')}</div>
+      <div class="label">${name}${name === 'Your timezone' ? ' — (Your timezone)' : ''}</div>
+      <div class="sub" id="${id}_sub">${info.market ? info.market : (info.tz||'')}</div>
       <div class="time" id="${id}_time">--:--:--</div>
       <div class="date" id="${id}_date" style="display:${showDate ? 'block' : 'none'}"></div>
       <div class="date small muted" id="${id}_iana" style="display:${showIANA && info.tz ? 'block' : 'none'}">${info.tz || ''}</div>
@@ -410,35 +457,40 @@ function renderAll(){
   });
 }
 
-/* Update times & market status styling every second */
+/* ---------- Update loop ---------- */
 function updateAll(){
-  Object.entries(data).forEach(([name,info])=>{
+  Object.entries(data).forEach(([name, info])=>{
     const id = idFor(name);
-    // time & date
     const timeEl = document.getElementById(id + '_time');
     const dateEl = document.getElementById(id + '_date');
     const tzEl = document.getElementById(id + '_iana');
-    if(timeEl && info.tz){
-      const f = formatForTZ(info.tz);
-      timeEl.textContent = f.timeStr;
-      if(dateEl) dateEl.textContent = f.dateStr;
-      if(tzEl) tzEl.textContent = info.tz;
-    } else if(timeEl){
-      timeEl.textContent = '--:--:--';
-      if(dateEl) dateEl.textContent = '';
+
+    if(timeEl){
+      if(info.tz){
+        const f = formatForTZ(info.tz);
+        timeEl.textContent = f.timeStr;
+        if(dateEl) dateEl.textContent = f.dateStr;
+        if(tzEl) tzEl.textContent = info.tz;
+      } else {
+        timeEl.textContent = '--:--:--';
+        if(dateEl) dateEl.textContent = '';
+      }
     }
 
-    // market status: on both major snap cards and desktop grid, update class
+    // update market open/closed classes
     if(info.market && info.open && info.close && info.tz){
       const open = isMarketOpen(info.open, info.close, info.tz);
-      // find desktop card
-      const card = document.querySelector(`#${id}_time`) ? document.getElementById(id + '_time').closest('.card') : null;
-      if(card){
-        card.classList.toggle('market-open', open);
-        card.classList.toggle('market-closed', !open);
+      // desktop card
+      const timeNode = document.getElementById(id + '_time');
+      if(timeNode){
+        const card = timeNode.closest('.card');
+        if(card){
+          card.classList.toggle('market-open', open);
+          card.classList.toggle('market-closed', !open);
+        }
       }
-      // find snap card
-      const snap = Array.from(document.querySelectorAll('.snap-card')).find(s=> s.dataset.city === name.toLowerCase());
+      // snap card
+      const snap = Array.from(document.querySelectorAll('.snap-card')).find(s => s.dataset.city === name.toLowerCase());
       if(snap){
         snap.classList.toggle('market-open', open);
         snap.classList.toggle('market-closed', !open);
@@ -447,21 +499,19 @@ function updateAll(){
   });
 }
 
-/* Filter functions */
+/* ---------- Filtering ---------- */
 function applyFilter(){
-  const q = searchInput.value.trim().toLowerCase();
+  const q = (searchInput.value || '').trim().toLowerCase();
   document.querySelectorAll('.card').forEach(card=>{
     const city = card.dataset.city || '';
     const isMarket = card.dataset.isMarket === '1';
     let show = city.includes(q);
     if(currentFilter === 'open' || currentFilter === 'closed'){
-      // evaluate market open/closed from class
       const isOpen = card.classList.contains('market-open');
       if(currentFilter === 'open') show = show && isOpen;
       if(currentFilter === 'closed') show = show && !isOpen;
     }
     if(showMajorOnly){
-      // only show if the city exists in majorMarketKeys OR is Your timezone
       const name = card.querySelector('.label')?.textContent || '';
       const allowed = majorMarketKeys.includes(name) || name === 'Your timezone';
       show = show && allowed;
@@ -469,46 +519,70 @@ function applyFilter(){
     card.style.display = show ? '' : 'none';
   });
 
-  // also filter snap cards
+  // snap cards filter
   document.querySelectorAll('.snap-card').forEach(s=>{
     const city = s.dataset.city || '';
     s.style.display = city.includes(q) ? '' : 'none';
   });
 }
 
-/* UI wiring */
-searchInput.addEventListener('input', ()=> applyFilter());
-settingsBtn.addEventListener('click', ()=>{
+/* ---------- UI wiring ---------- */
+searchInput.addEventListener('input', applyFilter);
+settingsBtn.addEventListener('click', ()=> {
   const shown = settingsPanel.classList.toggle('show');
   settingsBtn.setAttribute('aria-expanded', shown ? 'true' : 'false');
 });
-fmt24Btn.addEventListener('click', ()=> { hour24=true; fmt24Btn.classList.add('active'); fmt12Btn.classList.remove('active'); localSave(); updateAll(); });
-fmt12Btn.addEventListener('click', ()=> { hour24=false; fmt12Btn.classList.add('active'); fmt24Btn.classList.remove('active'); localSave(); updateAll(); });
-swatches.forEach(s => s.addEventListener('click', ()=> {
+
+fmt24Btn.addEventListener('click', ()=> { hour24=true; fmt24Btn.classList.add('active'); fmt12Btn.classList.remove('active'); savePrefs(); updateAll(); });
+fmt12Btn.addEventListener('click', ()=> { hour24=false; fmt12Btn.classList.add('active'); fmt24Btn.classList.remove('active'); savePrefs(); updateAll(); });
+
+swatches.forEach(s => s.addEventListener('click', ()=>{
   const c = s.dataset.accent;
-  document.documentElement.style.setProperty('--accent', c);
-  document.documentElement.style.setProperty('--open-color', c);
-  localSave();
+  if(c) {
+    document.documentElement.style.setProperty('--accent', c);
+    document.documentElement.style.setProperty('--open-color', c);
+    savePrefs();
+  }
 }));
+
 showDateChk.addEventListener('change', ()=> {
   showDate = showDateChk.checked;
   document.querySelectorAll("[id$='_date']").forEach(d => d.style.display = showDate ? 'block' : 'none');
-  localSave();
+  savePrefs();
 });
-showIANAChk.addEventListener('change', ()=>{
+showIANAChk.addEventListener('change', ()=> {
   showIANA = showIANAChk.checked;
   document.querySelectorAll("[id$='_iana']").forEach(d => d.style.display = showIANA ? 'block' : 'none');
-  localSave();
+  savePrefs();
 });
 
 filterAllBtn.addEventListener('click', ()=> { currentFilter='all'; setActiveFilter(); applyFilter(); });
 filterOpenBtn.addEventListener('click', ()=> { currentFilter='open'; setActiveFilter(); applyFilter(); });
 filterClosedBtn.addEventListener('click', ()=> { currentFilter='closed'; setActiveFilter(); applyFilter(); });
-toggleMajorBtn.addEventListener('click', ()=> { showMajorOnly = !showMajorOnly; toggleMajorBtn.textContent = showMajorOnly ? 'Show major only' : 'Show all cities'; applyFilter(); localSave(); });
+toggleMajorBtn.addEventListener('click', ()=> { showMajorOnly = !showMajorOnly; toggleMajorBtn.textContent = showMajorOnly ? 'Show major only' : 'Show all cities'; applyFilter(); savePrefs(); });
 
 focusYourBtn.addEventListener('click', ()=> {
   const el = Array.from(document.querySelectorAll('.card')).find(c => c.querySelector('.label') && c.querySelector('.label').textContent.includes('Your timezone'));
   if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+majorSnap.addEventListener('click', (e)=> {
+  const s = e.target.closest('.snap-card');
+  if(s) s.scrollIntoView({behavior:'smooth',block:'center'});
+});
+
+majorSnap.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowRight'){ (document.activeElement.nextElementSibling || document.activeElement).focus(); }
+  if(e.key === 'ArrowLeft'){ (document.activeElement.previousElementSibling || document.activeElement).focus(); }
+});
+
+/* Theme select */
+themeSelect.addEventListener('change', (e)=>{
+  const v = e.target.value;
+  document.body.classList.remove('theme-dark','theme-gold');
+  if(v === 'dark') document.body.classList.add('theme-dark');
+  if(v === 'gold') document.body.classList.add('theme-gold');
+  savePrefs();
 });
 
 /* keyboard shortcut to focus search */
@@ -517,7 +591,7 @@ document.addEventListener('keydown', (e)=>{
   if((mod && e.key.toLowerCase() === 'k') || e.key === '/') { e.preventDefault(); searchInput.focus(); searchInput.select(); }
 });
 
-/* set active filter button visuals */
+/* filter button visuals */
 function setActiveFilter(){
   [filterAllBtn, filterOpenBtn, filterClosedBtn].forEach(b => b.classList.remove('active'));
   if(currentFilter === 'all') filterAllBtn.classList.add('active');
@@ -525,14 +599,17 @@ function setActiveFilter(){
   if(currentFilter === 'closed') filterClosedBtn.classList.add('active');
 }
 
-/* local storage for preferences */
-function localSave(){
+/* ---------- Persistence ---------- */
+function savePrefs(){
   try{
-    const s = {hour24,accent:getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),showDate,showIANA,showMajorOnly};
-    localStorage.setItem('trader_clock_prefs', JSON.stringify(s));
+    const prefs = {
+      hour24, accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), showDate, showIANA, showMajorOnly,
+      theme: document.body.classList.contains('theme-dark') ? 'dark' : (document.body.classList.contains('theme-gold') ? 'gold' : 'light')
+    };
+    localStorage.setItem('trader_clock_prefs', JSON.stringify(prefs));
   }catch(e){}
 }
-function localLoad(){
+function loadPrefs(){
   try{
     const p = JSON.parse(localStorage.getItem('trader_clock_prefs') || 'null');
     if(p){
@@ -541,34 +618,28 @@ function localLoad(){
       if(p.showDate === false) { showDate=false; showDateChk.checked=false; }
       if(p.showIANA === false) { showIANA=false; showIANAChk.checked=false; }
       if(p.showMajorOnly === false) { showMajorOnly=false; toggleMajorBtn.textContent='Show all cities'; }
+      if(p.theme === 'dark') { document.body.classList.add('theme-dark'); themeSelect.value = 'dark'; }
+      if(p.theme === 'gold') { document.body.classList.add('theme-gold'); themeSelect.value = 'gold'; }
+      if(p.theme === 'light') { themeSelect.value = 'light'; }
       if(hour24) { fmt24Btn.classList.add('active'); fmt12Btn.classList.remove('active'); } else { fmt12Btn.classList.add('active'); fmt24Btn.classList.remove('active'); }
+    } else {
+      fmt24Btn.classList.add('active');
     }
   }catch(e){}
 }
 
-/* Initial render and loop */
-localLoad();
-renderAll();
-updateAll();
-setInterval(updateAll, 1000);
-setInterval(applyFilter, 500); // reapply filter semi-regularly to reflect status changes
-
-/* initial filter state */
-setActiveFilter();
-applyFilter();
-
-/* ensure tapping cards scrolls them to center for snap row on mobile */
-majorSnap.addEventListener('click', (e)=>{
-  const s = e.target.closest('.snap-card');
-  if(s) s.scrollIntoView({behavior:'smooth',block:'center'});
-});
-
-/* make major snap accessible by keyboard */
-majorSnap.addEventListener('keydown', (e)=> {
-  if(e.key === 'ArrowRight'){ (document.activeElement.nextElementSibling || document.activeElement).focus(); }
-  if(e.key === 'ArrowLeft'){ (document.activeElement.previousElementSibling || document.activeElement).focus(); }
+/* ---------- Init (ensure DOM loaded) ---------- */
+window.addEventListener('load', ()=> {
+  loadPrefs();
+  renderAll();
+  // run update immediately and every second
+  updateAll();
+  setInterval(updateAll, 1000);
+  // reapply filter periodically so open/closed status updates view
+  setInterval(applyFilter, 700);
+  setActiveFilter();
+  applyFilter();
 });
 </script>
-
 </body>
 </html>
